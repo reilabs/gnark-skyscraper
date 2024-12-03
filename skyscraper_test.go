@@ -1,7 +1,6 @@
 package skyscraper
 
 import (
-	"fmt"
 	"github.com/consensys/gnark-crypto/ecc"
 	"github.com/consensys/gnark/backend"
 	"github.com/consensys/gnark/frontend"
@@ -75,7 +74,6 @@ func (c *TestBarC) Define(api frontend.API) error {
 func TestBar(t *testing.T) {
 	assert := test.NewAssert(t)
 	for wordSize := 1; wordSize <= 2; wordSize++ {
-		fmt.Printf("wordSize: %d\n", wordSize)
 		assert.CheckCircuit(&TestBarC{WordSize: wordSize}, test.WithCurves(ecc.BN254), test.WithBackends(backend.GROTH16),
 			test.WithValidAssignment(&TestBarC{wordSize, 0, 0}),
 			test.WithValidAssignment(&TestBarC{wordSize, 1, bigIntFromString("680564733841876926926749214863536422912")}),
