@@ -2,13 +2,14 @@ package skyscraper
 
 import (
 	"fmt"
+	"math/big"
+	"math/bits"
+
 	"github.com/consensys/gnark-crypto/ecc"
 	"github.com/consensys/gnark/constraint/solver"
 	"github.com/consensys/gnark/frontend"
 	"github.com/consensys/gnark/std/lookup/logderivlookup"
 	"github.com/consensys/gnark/std/rangecheck"
-	"math/big"
-	"math/bits"
 )
 
 func wordsBeHint(field *big.Int, inputs []*big.Int, outputs []*big.Int) error {
@@ -57,6 +58,7 @@ func init() {
 
 type Skyscraper struct {
 	rc       [8]big.Int
+	rc_pow   [18]big.Int // for PoW
 	sigma    big.Int
 	sboxT    *logderivlookup.Table
 	rchk     frontend.Rangechecker
@@ -96,11 +98,33 @@ func NewSkyscraper(api frontend.API, wordSize int) *Skyscraper {
 	rc[5].SetString("7807402158218786806372091124904574238561123446618083586948014838053032654983", 10)
 	rc[6].SetString("13329560971460034925899588938593812685746818331549554971040309989641523590611", 10)
 	rc[7].SetString("16971509144034029782226530622087626979814683266929655790026304723118124142299", 10)
+
 	sigma := big.Int{}
 	sigma.SetString("9915499612839321149637521777990102151350674507940716049588462388200839649614", 10)
 
+	rc_pow := [18]big.Int{}
+	rc_pow[0].SetString("0", 10)
+	rc_pow[1].SetString("17829420340877239108687448009732280677191990375576158938221412342251481978692", 10)
+	rc_pow[2].SetString("5852100059362614845584985098022261541909346143980691326489891671321030921585", 10)
+	rc_pow[3].SetString("17048088173265532689680903955395019356591870902241717143279822196003888806966", 10)
+	rc_pow[4].SetString("71577923540621522166602308362662170286605786204339342029375621502658138039", 10)
+	rc_pow[5].SetString("1630526119629192105940988602003704216811347521589219909349181656165466494167", 10)
+	rc_pow[6].SetString("7807402158218786806372091124904574238561123446618083586948014838053032654983", 10)
+	rc_pow[7].SetString("13329560971460034925899588938593812685746818331549554971040309989641523590611", 10)
+	rc_pow[8].SetString("16971509144034029782226530622087626979814683266929655790026304723118124142299", 10)
+	rc_pow[9].SetString("8608910393531852188108777530736778805001620473682472554749734455948859886057", 10)
+	rc_pow[10].SetString("10789906636021659141392066577070901692352605261812599600575143961478236801530", 10)
+	rc_pow[11].SetString("18708129585851494907644197977764586873688181219062643217509404046560774277231", 10)
+	rc_pow[12].SetString("8383317008589863184762767400375936634388677459538766150640361406080412989586", 10)
+	rc_pow[13].SetString("10555553646766747611187318546907885054893417621612381305146047194084618122734", 10)
+	rc_pow[14].SetString("18278062107303135832359716534360847832111250949377506216079581779892498540823", 10)
+	rc_pow[15].SetString("9307964587880364850754205696017897664821998926660334400055925260019288889718", 10)
+	rc_pow[16].SetString("13066217995902074168664295654459329310074418852039335279433003242098078040116", 10)
+	rc_pow[17].SetString("0", 10)
+
 	return &Skyscraper{
 		rc,
+		rc_pow,
 		sigma,
 		initSbox(api, wordSize),
 		rangecheck.New(api),
@@ -188,4 +212,27 @@ func (s *Skyscraper) Compress(l, r frontend.Variable) frontend.Variable {
 	in := [2]frontend.Variable{l, r}
 	s.Permute(&in)
 	return s.api.Add(l, in[0])
+}
+
+func (s *Skyscraper) CompressV2(l, r frontend.Variable) frontend.Variable {
+	l_backup := l
+	l, r = s.api.Add(s.api.Add(r, s.square(l)), s.rc_pow[0]), l
+	l, r = s.api.Add(s.api.Add(r, s.square(l)), s.rc_pow[1]), l
+	l, r = s.api.Add(s.api.Add(r, s.square(l)), s.rc_pow[2]), l
+	l, r = s.api.Add(s.api.Add(r, s.square(l)), s.rc_pow[3]), l
+	l, r = s.api.Add(s.api.Add(r, s.square(l)), s.rc_pow[4]), l
+	l, r = s.api.Add(s.api.Add(r, s.square(l)), s.rc_pow[5]), l
+	l, r = s.api.Add(s.api.Add(r, s.bar(l)), s.rc_pow[6]), l
+	l, r = s.api.Add(s.api.Add(r, s.bar(l)), s.rc_pow[7]), l
+	l, r = s.api.Add(s.api.Add(r, s.square(l)), s.rc_pow[8]), l
+	l, r = s.api.Add(s.api.Add(r, s.square(l)), s.rc_pow[9]), l
+	l, r = s.api.Add(s.api.Add(r, s.bar(l)), s.rc_pow[10]), l
+	l, r = s.api.Add(s.api.Add(r, s.bar(l)), s.rc_pow[11]), l
+	l, r = s.api.Add(s.api.Add(r, s.square(l)), s.rc_pow[12]), l
+	l, r = s.api.Add(s.api.Add(r, s.square(l)), s.rc_pow[13]), l
+	l, r = s.api.Add(s.api.Add(r, s.square(l)), s.rc_pow[14]), l
+	l, r = s.api.Add(s.api.Add(r, s.square(l)), s.rc_pow[15]), l
+	l, r = s.api.Add(s.api.Add(r, s.square(l)), s.rc_pow[16]), l
+	l, r = s.api.Add(s.api.Add(r, s.square(l)), s.rc_pow[17]), l
+	return s.api.Add(l, l_backup)
 }
