@@ -60,7 +60,7 @@ type Skyscraper struct {
 	rc       [8]big.Int
 	rc_pow   [18]big.Int // Proof of Work round constants, used in CompressV2
 	sigma    big.Int
-	sboxT    *logderivlookup.Table
+	sboxT    logderivlookup.Table
 	rchk     frontend.Rangechecker
 	wordSize int
 	api      frontend.API
@@ -73,7 +73,7 @@ func sboxByte(b byte) byte {
 	return bits.RotateLeft8(b^(x&y&z), 1)
 }
 
-func initSbox(api frontend.API, wordSize int) *logderivlookup.Table {
+func initSbox(api frontend.API, wordSize int) logderivlookup.Table {
 	t := logderivlookup.New(api)
 	tableSize := 1 << (8 * wordSize)
 	for i := range tableSize {
