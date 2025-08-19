@@ -214,8 +214,8 @@ func (s *Skyscraper) Compress(l, r frontend.Variable) frontend.Variable {
 	return s.api.Add(l, in[0])
 }
 
-func (s *Skyscraper) CompressV2(l, r frontend.Variable) frontend.Variable {
-	l_backup := l
+func (s *Skyscraper) PermuteV2(state *[2]frontend.Variable) {
+	l, r := state[0], state[1]
 	l, r = s.api.Add(s.api.Add(r, s.square(l)), s.rc_pow[0]), l
 	l, r = s.api.Add(s.api.Add(r, s.square(l)), s.rc_pow[1]), l
 	l, r = s.api.Add(s.api.Add(r, s.square(l)), s.rc_pow[2]), l
@@ -234,5 +234,12 @@ func (s *Skyscraper) CompressV2(l, r frontend.Variable) frontend.Variable {
 	l, r = s.api.Add(s.api.Add(r, s.square(l)), s.rc_pow[15]), l
 	l, r = s.api.Add(s.api.Add(r, s.square(l)), s.rc_pow[16]), l
 	l, r = s.api.Add(s.api.Add(r, s.square(l)), s.rc_pow[17]), l
-	return s.api.Add(l, l_backup)
+	state[0], state[1] = l, r
+}
+
+func (s *Skyscraper) CompressV2(l, r frontend.Variable) frontend.Variable {
+	l_backup := l
+	state := [2]frontend.Variable{l, r}
+	s.PermuteV2(&state)
+	return s.api.Add(state[0], l_backup)
 }
